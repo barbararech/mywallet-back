@@ -58,7 +58,36 @@ app.post("/signup", async (req, res) => {
   }
 });
 
-app.post("/login", async (req, res) => {});
+app.post("/login", async (req, res) => {
+  const loginSchema = joi.object({
+    email: joi.string().email().required(),
+    password: joi.string().required(),
+  });
+
+  const { email, password } = req.body;
+
+  const validation = loginSchema.validate(
+    { email, password },
+    { abortEarly: false }
+  );
+
+  if (validation.error) {
+    console.log(validation.error.details);
+    return res.sendStatus(422);
+  }
+
+  try {
+    const user = await db.collection("users").findOne({ email });
+
+    if (!user || password !== user.password) {
+      return res.sendStatus(403);
+    }
+
+    return res.sendStatus(200);
+  } catch (error) {
+    res.sendStatus(500);
+  }
+});
 
 app.get("/transactions", async (req, res) => {});
 
