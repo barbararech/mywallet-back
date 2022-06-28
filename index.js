@@ -15,16 +15,55 @@ let db;
 
 mongoClient.connect().then(() => {
   db = mongoClient.db("mywallet");
+  console.log("mongo is connected");
 });
 
-app.post("/signup"), async (req, res) => {};
+app.post("/signup", async (req, res) => {
+  const signupSchema = joi.object({
+    name: joi.string().required(),
+    email: joi.string().email().required(),
+    password: joi.string().required(),
+    confirmPassword: joi.string().required(),
+  });
 
-app.post("/login"), async (req, res) => {};
+  const { name, email, password, confirmPassword } = req.body;
 
-app.get("/transactions"), async (req, res) => {};
+  const validation = signupSchema.validate(
+    { name, email, password, confirmPassword },
+    { abortEarly: false }
+  );
 
-app.post("/income"), async (req, res) => {};
+  if (validation.error) {
+    console.log(validation.error.details);
+    return res.sendStatus(422);
+  }
 
-app.get("/expense"), async (req, res) => {};
+  if (password !== confirmPassword) {
+    console.log("As senhas não são iguais. Tente novamente!");
+    return res.sendStatus(403);
+  }
+
+  try {
+    const userExist = await db.collection("users").findOne({ email });
+
+    if (userExist) {
+      return res.sendStatus(409);
+    }
+
+    await db.collection("users").insertOne({ name, email, password });
+
+    return res.sendStatus(201);
+  } catch (error) {
+    res.sendStatus(500);
+  }
+});
+
+app.post("/login", async (req, res) => {});
+
+app.get("/transactions", async (req, res) => {});
+
+app.post("/income", async (req, res) => {});
+
+app.get("/expense", async (req, res) => {});
 
 app.listen(5000, () => console.log("Server On!"));
