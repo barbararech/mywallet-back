@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 import dayjs from "dayjs";
 import joi from "joi";
 import bcrypt from "bcrypt";
+import { v4 as uuid } from "uuid";
 
 dotenv.config();
 const app = express();
@@ -76,21 +77,50 @@ app.post("/login", async (req, res) => {
   try {
     const user = await db.collection("users").findOne({ email });
 
-    if (!user || password !== user.password) {
-      return res.sendStatus(403);
-    }
-    const name = user.name;
+    if (user && bcrypt.compareSync(password, user.password)) {
+      const token = uuid();
+      const { name, email } = user;
 
-    return res.status(200).send({ email, password, name });
+      await db.collection("sessions").insertOne({
+        token,
+        userId: user._id,
+      });
+
+      return res.status(200).send({ name, email, token });
+    } else {
+      return res.status(403).send("Email ou senha invália!");
+    }
   } catch (error) {
     res.sendStatus(500);
   }
 });
 
-app.post("/income", async (req, res) => {});
+app.post("/income", async (req, res) => {
+  
+});
 
 app.get("/expense", async (req, res) => {});
 
-app.get("/transactions", async (req, res) => {});
+app.get("/transactions", async (req, res) => {
+  const { authorization } = req.headers;
+  const token = authorization?.replace("Bearer ", "");
+  console.log(token);
+  try {
+    const session = await db.collection("sessions").findOne({ token });
+
+    if (!session) {
+      return res.sendStatus(401);
+    }
+
+    const transactions = await db
+      .collection("transactions")
+      .find({ userId: new ObjectId(session.userId) })
+      .toArray();
+
+    res.send(transactions);
+  } catch (error) {
+    res.sendStatus(500);
+  }
+});
 
 app.listen(5000, () => console.log("Server On!"));
