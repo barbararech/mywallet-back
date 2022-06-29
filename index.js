@@ -96,7 +96,40 @@ app.post("/login", async (req, res) => {
 });
 
 app.post("/income", async (req, res) => {
-  
+  const { authorization } = req.headers;
+  const { value, description } = req.body;
+  const token = authorization?.replace("Bearer ", "");
+  console.log(token);
+
+  const incomeSchema = joi.object({
+    value: joi.number().required(),
+    description: joi.string().required(),
+  });
+
+  const validation = incomeSchema.validate(
+    { value, description },
+    { abortEarly: false }
+  );
+
+  if (validation.error) {
+    console.log(validation.error.details);
+    return res.sendStatus(422);
+  }
+
+  try {
+    const session = await db.collection("sessions").findOne({ token });
+    console.log(session);
+    if (!session) {
+      return res.sendStatus(401);
+    }
+
+    const transactions = await db
+      .collection("transactions")
+      .insertOne({ value, description, userId: session.userId });
+    res.send(201);
+  } catch (error) {
+    res.sendStatus(500);
+  }
 });
 
 app.get("/expense", async (req, res) => {});
