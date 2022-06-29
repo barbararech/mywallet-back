@@ -4,6 +4,7 @@ import { MongoClient, ObjectId } from "mongodb";
 import dotenv from "dotenv";
 import dayjs from "dayjs";
 import joi from "joi";
+import bcrypt from "bcrypt";
 
 dotenv.config();
 const app = express();
@@ -23,13 +24,13 @@ app.post("/signup", async (req, res) => {
     name: joi.string().required(),
     email: joi.string().email().required(),
     password: joi.string().required(),
-    confirmPassword: joi.string().required(),
   });
 
-  const { name, email, password, confirmPassword } = req.body;
+  const user = req.body;
+  const { name, email, password } = req.body;
 
   const validation = signupSchema.validate(
-    { name, email, password, confirmPassword },
+    { name, email, password },
     { abortEarly: false }
   );
 
@@ -38,10 +39,7 @@ app.post("/signup", async (req, res) => {
     return res.sendStatus(422);
   }
 
-  if (password !== confirmPassword) {
-    console.log("As senhas não são iguais. Tente novamente!");
-    return res.sendStatus(403);
-  }
+  const passwordHash = bcrypt.hashSync(password, 10);
 
   try {
     const userExist = await db.collection("users").findOne({ email });
@@ -50,7 +48,7 @@ app.post("/signup", async (req, res) => {
       return res.sendStatus(409);
     }
 
-    await db.collection("users").insertOne({ name, email, password });
+    await db.collection("users").insertOne({ ...user, password: passwordHash });
 
     return res.sendStatus(201);
   } catch (error) {
@@ -65,7 +63,6 @@ app.post("/login", async (req, res) => {
   });
 
   const { email, password } = req.body;
-
   const validation = loginSchema.validate(
     { email, password },
     { abortEarly: false }
@@ -82,17 +79,18 @@ app.post("/login", async (req, res) => {
     if (!user || password !== user.password) {
       return res.sendStatus(403);
     }
+    const name = user.name;
 
-    return res.sendStatus(200);
+    return res.status(200).send({ email, password, name });
   } catch (error) {
     res.sendStatus(500);
   }
 });
 
-app.get("/transactions", async (req, res) => {});
-
 app.post("/income", async (req, res) => {});
 
 app.get("/expense", async (req, res) => {});
+
+app.get("/transactions", async (req, res) => {});
 
 app.listen(5000, () => console.log("Server On!"));
