@@ -97,17 +97,18 @@ app.post("/login", async (req, res) => {
 
 app.post("/income", async (req, res) => {
   const { authorization } = req.headers;
-  const { value, description } = req.body;
+  const { value, description, type } = req.body;
+  const date = dayjs().format("DD/MM");
   const token = authorization?.replace("Bearer ", "");
-  console.log(token);
 
   const incomeSchema = joi.object({
     value: joi.number().required(),
     description: joi.string().required(),
+    type: joi.string().valid("income").required(),
   });
 
   const validation = incomeSchema.validate(
-    { value, description },
+    { value, description, type },
     { abortEarly: false }
   );
 
@@ -118,26 +119,64 @@ app.post("/income", async (req, res) => {
 
   try {
     const session = await db.collection("sessions").findOne({ token });
-    console.log(session);
+
     if (!session) {
       return res.sendStatus(401);
     }
 
     const transactions = await db
       .collection("transactions")
-      .insertOne({ value, description, userId: session.userId });
-    res.send(201);
+      .insertOne({ value, description, type, date, userId: session.userId });
+
+    res.sendStatus(201);
   } catch (error) {
     res.sendStatus(500);
   }
 });
 
-app.get("/expense", async (req, res) => {});
+app.post("/expense", async (req, res) => {
+  const { authorization } = req.headers;
+  const { value, description, type } = req.body;
+  const date = dayjs().format("DD/MM");
+  const token = authorization?.replace("Bearer ", "");
+
+  const expenseSchema = joi.object({
+    value: joi.number().required(),
+    description: joi.string().required(),
+    type: joi.string().valid("expense").required(),
+  });
+
+  const validation = expenseSchema.validate(
+    { value, description, type },
+    { abortEarly: false }
+  );
+
+  if (validation.error) {
+    console.log(validation.error.details);
+    return res.sendStatus(422);
+  }
+
+  try {
+    const session = await db.collection("sessions").findOne({ token });
+
+    if (!session) {
+      return res.sendStatus(401);
+    }
+
+    const transactions = await db
+      .collection("transactions")
+      .insertOne({ value, description, type, date, userId: session.userId });
+
+    res.sendStatus(201);
+  } catch (error) {
+    res.sendStatus(500);
+  }
+});
 
 app.get("/transactions", async (req, res) => {
   const { authorization } = req.headers;
   const token = authorization?.replace("Bearer ", "");
-  console.log(token);
+
   try {
     const session = await db.collection("sessions").findOne({ token });
 
