@@ -195,4 +195,23 @@ app.get("/transactions", async (req, res) => {
   }
 });
 
+app.get("/signout", async (req, res) => {
+  const { authorization } = req.headers;
+  const token = authorization?.replace("Bearer ", "");
+
+  try {
+    const session = await db.collection("sessions").findOne({ token });
+
+    if (!session) {
+      return res.sendStatus(401);
+    }
+
+    await db.collection("sessions").deleteOne({ token });
+
+    res.status(200).send("Usuário deslogado com sucesso!");
+  } catch (error) {
+    res.sendStatus(500);
+  }
+});
+
 app.listen(5000, () => console.log("Server On!"));
