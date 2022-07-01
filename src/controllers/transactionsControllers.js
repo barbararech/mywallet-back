@@ -74,3 +74,20 @@ export async function DeleteTransaction(req, res) {
     res.sendStatus(500);
   }
 }
+
+export async function EditTransaction(req, res) {
+  const { user } = res.locals;
+  const { _id, value, description } = req.body;
+  console.log(_id);
+  console.log(req.body);
+
+  try {
+    await db
+      .collection("transactions")
+      .updateOne({ _id: new objectId(_id) }, { $set: { value, description } });
+
+    res.status(200).send("Entrada atualizada com sucesso!");
+  } catch (error) {
+    res.sendStatus(500);
+  }
+}

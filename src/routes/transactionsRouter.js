@@ -3,10 +3,14 @@ import {
   AddExpense,
   ListTransactions,
   DeleteTransaction,
+  EditTransaction,
 } from "../controllers/transactionsControllers.js";
 import { Router } from "express";
 import { TokenValidationMiddleware } from "../middlewares/TokenValidationMiddleware.js";
-import { ValidateTransaction } from "../middlewares/schemaValidationMiddleware.js";
+import {
+  ValidateTransaction,
+  ValidateUpdateTransaction,
+} from "../middlewares/schemaValidationMiddleware.js";
 
 const router = Router();
 
@@ -27,5 +31,12 @@ router.post(
 router.get("/transactions", TokenValidationMiddleware, ListTransactions);
 
 router.post("/delete", TokenValidationMiddleware, DeleteTransaction);
+
+router.put(
+  "/editTransaction",
+  TokenValidationMiddleware,
+  ValidateUpdateTransaction,
+  EditTransaction
+);
 
 export default router;
