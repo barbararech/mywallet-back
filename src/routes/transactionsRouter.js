@@ -2,6 +2,7 @@ import {
   AddIncome,
   AddExpense,
   ListTransactions,
+  DeleteTransaction,
 } from "../controllers/transactionsControllers.js";
 import { Router } from "express";
 import { TokenValidationMiddleware } from "../middlewares/TokenValidationMiddleware.js";
@@ -24,5 +25,7 @@ router.post(
 );
 
 router.get("/transactions", TokenValidationMiddleware, ListTransactions);
+
+router.post("/delete", TokenValidationMiddleware, DeleteTransaction);
 
 export default router;

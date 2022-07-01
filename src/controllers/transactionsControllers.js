@@ -56,3 +56,21 @@ export async function ListTransactions(req, res) {
     res.sendStatus(500);
   }
 }
+
+export async function DeleteTransaction(req, res) {
+  const { user } = res.locals;
+  const { _id } = req.body;
+
+  try {
+    await db.collection("transactions").deleteOne({ _id: new objectId(_id) });
+
+    const transactions = await db
+      .collection("transactions")
+      .find({ userId: new objectId(user._id) })
+      .toArray();
+
+    res.status(200).send(transactions);
+  } catch (error) {
+    res.sendStatus(500);
+  }
+}
