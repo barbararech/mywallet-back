@@ -1,6 +1,6 @@
 import dayjs from "dayjs";
-import joi from "joi";
 import { db, objectId } from "../dbStrategy/mongo.js";
+import { transactionSchema } from "../schemas/transactionSchema.js";
 
 export async function AddIncome(req, res) {
   const { authorization } = req.headers;
@@ -8,13 +8,7 @@ export async function AddIncome(req, res) {
   const date = dayjs().format("DD/MM");
   const token = authorization?.replace("Bearer ", "");
 
-  const incomeSchema = joi.object({
-    value: joi.number().required(),
-    description: joi.string().required(),
-    type: joi.string().valid("income").required(),
-  });
-
-  const validation = incomeSchema.validate(
+  const validation = transactionSchema.validate(
     { value, description, type },
     { abortEarly: false }
   );
@@ -47,13 +41,7 @@ export async function AddExpense(req, res) {
   const date = dayjs().format("DD/MM");
   const token = authorization?.replace("Bearer ", "");
 
-  const expenseSchema = joi.object({
-    value: joi.number().required(),
-    description: joi.string().required(),
-    type: joi.string().valid("expense").required(),
-  });
-
-  const validation = expenseSchema.validate(
+  const validation = transactionSchema.validate(
     { value, description, type },
     { abortEarly: false }
   );

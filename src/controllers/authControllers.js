@@ -1,18 +1,13 @@
 import bcrypt from "bcrypt";
 import { v4 as uuid } from "uuid";
-import joi from "joi";
 import { db } from "../dbStrategy/mongo.js";
+import { authSignupSchema, authLoginSchema } from "../schemas/authSchema.js";
 
 export async function CreateUser(req, res) {
-  const signupSchema = joi.object({
-    name: joi.string().required(),
-    email: joi.string().email().required(),
-    password: joi.string().required(),
-  });
   const user = req.body;
   const { name, email, password } = req.body;
 
-  const validation = signupSchema.validate(
+  const validation = authSignupSchema.validate(
     { name, email, password },
     { abortEarly: false }
   );
@@ -40,13 +35,8 @@ export async function CreateUser(req, res) {
 }
 
 export async function LoginUser(req, res) {
-  const loginSchema = joi.object({
-    email: joi.string().email().required(),
-    password: joi.string().required(),
-  });
-
   const { email, password } = req.body;
-  const validation = loginSchema.validate(
+  const validation = authLoginSchema.validate(
     { email, password },
     { abortEarly: false }
   );
