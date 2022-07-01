@@ -1,21 +1,10 @@
 import bcrypt from "bcrypt";
 import { v4 as uuid } from "uuid";
-import { db } from "../dbStrategy/mongo.js";
-import { authSignupSchema, authLoginSchema } from "../schemas/authSchema.js";
+import { db, objectId } from "../dbStrategy/mongo.js";
 
 export async function CreateUser(req, res) {
   const user = req.body;
-  const { name, email, password } = req.body;
-
-  const validation = authSignupSchema.validate(
-    { name, email, password },
-    { abortEarly: false }
-  );
-
-  if (validation.error) {
-    console.log(validation.error.details);
-    return res.sendStatus(422);
-  }
+  const { email, password } = req.body;
 
   const passwordHash = bcrypt.hashSync(password, 10);
 
@@ -36,15 +25,6 @@ export async function CreateUser(req, res) {
 
 export async function LoginUser(req, res) {
   const { email, password } = req.body;
-  const validation = authLoginSchema.validate(
-    { email, password },
-    { abortEarly: false }
-  );
-
-  if (validation.error) {
-    console.log(validation.error.details);
-    return res.sendStatus(422);
-  }
 
   try {
     const user = await db.collection("users").findOne({ email });
@@ -68,17 +48,12 @@ export async function LoginUser(req, res) {
 }
 
 export async function LogoutUser(req, res) {
-  const { authorization } = req.headers;
-  const token = authorization?.replace("Bearer ", "");
+  const { user } = res.locals;
 
   try {
-    const session = await db.collection("sessions").findOne({ token });
-
-    if (!session) {
-      return res.sendStatus(401);
-    }
-
-    await db.collection("sessions").deleteOne({ token });
+    await db
+      .collection("sessions")
+      .deleteOne({ userId: new objectId(user._id) });
 
     res.status(200).send("Usuário deslogado com sucesso!");
   } catch (error) {

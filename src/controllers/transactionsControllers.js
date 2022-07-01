@@ -1,66 +1,40 @@
 import dayjs from "dayjs";
 import { db, objectId } from "../dbStrategy/mongo.js";
-import { transactionSchema } from "../schemas/transactionSchema.js";
 
 export async function AddIncome(req, res) {
-  const { authorization } = req.headers;
   const { value, description, type } = req.body;
+  const { user } = res.locals;
   const date = dayjs().format("DD/MM");
-  const token = authorization?.replace("Bearer ", "");
-
-  const validation = transactionSchema.validate(
-    { value, description, type },
-    { abortEarly: false }
-  );
-
-  if (validation.error) {
-    console.log(validation.error.details);
-    return res.sendStatus(422);
-  }
 
   try {
-    const session = await db.collection("sessions").findOne({ token });
-
-    if (!session) {
-      return res.sendStatus(401);
-    }
-
-    const transactions = await db
-      .collection("transactions")
-      .insertOne({ value, description, type, date, userId: session.userId });
+    await db.collection("transactions").insertOne({
+      value,
+      description,
+      type,
+      date,
+      userId: new objectId(user._id),
+    });
 
     res.sendStatus(201);
   } catch (error) {
+    console.log("não deu");
     res.sendStatus(500);
   }
 }
 
 export async function AddExpense(req, res) {
-  const { authorization } = req.headers;
   const { value, description, type } = req.body;
+  const { user } = res.locals;
   const date = dayjs().format("DD/MM");
-  const token = authorization?.replace("Bearer ", "");
-
-  const validation = transactionSchema.validate(
-    { value, description, type },
-    { abortEarly: false }
-  );
-
-  if (validation.error) {
-    console.log(validation.error.details);
-    return res.sendStatus(422);
-  }
 
   try {
-    const session = await db.collection("sessions").findOne({ token });
-
-    if (!session) {
-      return res.sendStatus(401);
-    }
-
-    const transactions = await db
-      .collection("transactions")
-      .insertOne({ value, description, type, date, userId: session.userId });
+    const transactions = await db.collection("transactions").insertOne({
+      value,
+      description,
+      type,
+      date,
+      userId: new objectId(user._id),
+    });
 
     res.sendStatus(201);
   } catch (error) {
@@ -69,19 +43,12 @@ export async function AddExpense(req, res) {
 }
 
 export async function ListTransactions(req, res) {
-  const { authorization } = req.headers;
-  const token = authorization?.replace("Bearer ", "");
+  const { user } = res.locals;
 
   try {
-    const session = await db.collection("sessions").findOne({ token });
-
-    if (!session) {
-      return res.sendStatus(401);
-    }
-
     const transactions = await db
       .collection("transactions")
-      .find({ userId: new objectId(session.userId) })
+      .find({ userId: new objectId(user._id) })
       .toArray();
 
     res.send(transactions);
